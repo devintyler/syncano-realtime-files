@@ -28,6 +28,7 @@ var fileUploadForm = $('#fileUploadForm'); // jQuery file form ID
 var filesRow = $('#filesRow'); // jQuery file block ID
 var files = []; // file array
 
+
 // **** Real Time Set Up ****
 // Hints:
 //  - use the 'realtime' variable
@@ -45,7 +46,7 @@ var files = []; // file array
 instance.class(className).dataobject().list()
     .then(function(res){ // if getting data is successful
         if (res.objects.length < 1){ // if there are files
-            filesRow.html('<div class="small-12 columns text-center"><h4 class="vertical" id="noFiles">Upload A File First</h4></div>');
+            filesRow.html('<div id="noFiles" class="small-12 columns text-center"><h4 class="vertical">Upload A File First</h4></div>');
         } else { // if there are no files
             files = res.objects;
 
@@ -96,6 +97,9 @@ fileUploadForm.on('submit', function(e){ // when you submit the file
 
 // Functions
 function addFileBlock(data) { // add file to UI code
+    if($("#noFiles").length > 0) {
+        $('#noFiles').remove();
+    }
     filesRow.append('<div id="' + data.id + '" class="small-6 medium-4 large-3 columns" style="display:none"><div class="file text-center">' +
         '<h4>' + data.name + '</h4>' +
         '<a href=' + data.file.value + ' target="_blank"><p>Download</p></a>' +
