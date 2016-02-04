@@ -1,13 +1,27 @@
-// Templating
-$(document).foundation();
+// INSTRUCTIONS //
+// Note: Be sure to follow the instructions in the mini hack
+// Mini Hacks Link: [http://syncano-community.github.io/minihacks/]
+//
+// 1. Fill out the "User Variables" with your Syncano credentials
+//      - All details can be found on the Syncano Dashboard
+//      - (you'll need to create an API key)
+//      - you can use an API key with "ignore_acl" instead of account
+// 2. Add two functions to watch the 'create' and 'delete' of your class
+//      - Find hints under '// Real Time Set Up' below
+// 2. Set up a server in this directory
+//      - link to easy server for mac/linux/pc
+// 3. Add and remove files! (Don't worry, only you have access to them)
+//
+// You can also look through this file to see how the code works!
 
-// Global Variables
+// User Variables
 var accountKey = 'YOUR_ACCOUNT_KEY';
 var apiKey = 'YOUR_API_KEY';
 var instanceName = 'YOUR_INSTANCE';
 var channel = 'YOUR_CHANNEL';
 var className = 'YOUR_CLASS';
 
+// Global Variables
 var syncano = new Syncano({accountKey: accountKey});
 var apiSyncano = new Syncano({apiKey: apiKey, instance: instanceName});
 var instance = syncano.instance(instanceName);
@@ -17,13 +31,19 @@ var fileUploadForm = $('#fileUploadForm');
 var filesRow = $('#filesRow');
 var files = [];
 
-// Real Time Set Up
-realtime.on('create', function(data) {
-    filesRow.append('<div id="' + data.id + '" class="small-6 medium-4 large-3 columns" style="display:none"><div class="file text-center">' +
-        '<h4>' + data.name + '</h4>' +
-        '<a href=' + data.file.value + ' target="_blank"><p>Download</p></a></div></div>');
+// **** Real Time Set Up ****
+// Hints:
+//  - use the 'realtime' variable
+//  - Put this code inside the "on create" call
+//      addFileBlock(data);
+//  - Put this code inside the "on delete" call
+//      var fileID = $('#' + JSON.stringify(data.id));
+//      fileID.fadeOut('fast', function(){
+//          $(this).remove();
+//      });
 
-    $('#' + JSON.stringify(data.id)).fadeIn();
+realtime.on('create', function(data) {
+    addFileBlock(data);
 });
 
 realtime.on('delete', function(data) {
@@ -43,9 +63,7 @@ instance.class(className).dataobject().list()
             files = res.objects;
 
             for (i = 0; i < files.length; i++){
-                filesRow.append('<div id="' + res.objects[i].id + '" class="small-6 medium-4 large-3 columns"><div class="file text-center">' +
-                    '<h4>' + res.objects[i].name + '</h4>' +
-                    '<a href=' + res.objects[i].file.value + ' target="_blank"><p>Download</p></a></div></div>');
+                addFileBlock(res.objects[i]);
             }
         }
     })
@@ -56,6 +74,8 @@ instance.class(className).dataobject().list()
 // Listeners
 fileForm.on('change', function(e){
     $('#selectedFile').text(e.target.files[0].name);
+
+    $('#fileFormSubmit').attr('disabled', false);
 });
 
 fileUploadForm.on('submit', function(e){
@@ -77,4 +97,33 @@ fileUploadForm.on('submit', function(e){
         .catch(function(err){
             console.log(err);
         });
+
+    fileForm.wrap('<form>').closest('form').get(0).reset();
+    fileForm.unwrap();
+
+    $('#selectedFile').text('');
 });
+
+// Functions
+function addFileBlock(data) {
+    filesRow.append('<div id="' + data.id + '" class="small-6 medium-4 large-3 columns" style="display:none"><div class="file text-center">' +
+        '<h4>' + data.name + '</h4>' +
+        '<a href=' + data.file.value + ' target="_blank"><p>Download</p></a>' +
+        '<a class="removeText" onclick="removeFile(' + data.id + ')">Remove</a>' +
+        '</div></div>');
+
+    $('#' + JSON.stringify(data.id)).fadeIn();
+}
+
+function removeFile(id) {
+    instance.class(className).dataobject(id).delete()
+        .then(function(res){
+            //console.log(res);
+        })
+        .catch(function(err){
+            console.log(err);
+        });
+}
+
+// Templating
+$(document).foundation();
