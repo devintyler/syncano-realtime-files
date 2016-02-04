@@ -29,6 +29,7 @@ var filesRow = $('#filesRow'); // jQuery file block ID
 var files = []; // file array
 
 
+
 // **** Real Time Set Up ****
 // Hints:
 //  - use the 'realtime' variable
@@ -39,6 +40,9 @@ var files = []; // file array
 //      fileID.fadeOut('fast', function(){
 //          $(this).remove();
 //      });
+
+// **** PUT YOUR REAL TIME CODE HERE ****
+
 
 
 // Syncano Set Up
