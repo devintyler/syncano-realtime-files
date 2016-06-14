@@ -61,7 +61,7 @@ header {
     overflow: scroll;
 }
 
-#noFiles {
+.vertical {
     color: grey;
 }
 
