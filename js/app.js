@@ -15,20 +15,35 @@
 
 
 // User Variables
-var apiKey = 'YOUR_API_KEY'; // make sure it has the 'ignore_acl' switched on when created!
-var instanceName = 'YOUR_INSTANCE'; // the Syncano instance name you created
-var channel = 'YOUR_CHANNEL'; // the channel you set up
-var className = 'YOUR_CLASS'; // the class with the files you set up
+var apiKey = '8dd14357dbff5baba2dcca804ac51b8f3f8703ff'; // make sure it has the 'ignore_acl' switched on when created!
+var instanceName = 'syncano-file-manager'; // the Syncano instance name you created
+var channelName = 'file-tracker'; // the channel you set up
+var className = 'uploads'; // the class with the files you set up
 
 // Global Variables
-var instance = new Syncano({apiKey: apiKey, instance: instanceName}); // creates Syncano object
-var realtime = instance.channel(channel).watch(); // **** your real time object from Syncano //
+var instance = Syncano({apiKey: apiKey}); // creates Syncano object
+var DataObject = instance.DataObject;
+var realtime = instance.Channel; // **** your real time object from Syncano //
+var channel = {
+    instanceName:instanceName,
+    name:channelName
+};
+var poll = realtime.please().poll(channel);
 var fileForm = $('#fileUpload'); // jQuery file select ID
 var fileUploadForm = $('#fileUploadForm'); // jQuery file form ID
 var filesRow = $('#filesRow'); // jQuery file block ID
 var files = []; // file array
 
+poll.on('create', function(data){
+    addFileBlock(data);
+});
 
+poll.on('delete', function(data){
+    var fileID = $('#' + JSON.stringify(data.payload.id));
+    fileID.fadeOut('fast', function(){
+        $(this).remove();
+    });
+});
 
 // **** Real Time Set Up ****
 // Hints:
@@ -47,15 +62,19 @@ var files = []; // file array
 
 // Syncano Set Up
 // lists your current data
-instance.class(className).dataobject().list()
+var fileQuery = {
+    instanceName:instanceName,
+    className: className
+};
+DataObject.please().list(fileQuery)
     .then(function(res){ // if getting data is successful
-        if (res.objects.length < 1){ // if there are files
+        if (res.length < 1){ // if there are files
             filesRow.html('<div id="noFiles" class="small-12 columns text-center"><h4 class="vertical">Upload A File First</h4></div>');
         } else { // if there are no files
-            files = res.objects;
+            files = res;
 
             for (i = 0; i < files.length; i++){ // go through each file object
-                addFileBlock(res.objects[i]); // add file to UI
+                addFileBlock(res[i]); // add file to UI
             }
         }
     })
@@ -74,16 +93,15 @@ fileUploadForm.on('submit', function(e){ // when you submit the file
     e.preventDefault();
 
     var object = { // Syncano file object {name, file details, channel details}
+        instanceName: instanceName,
+        className: className,
         "name": fileForm[0].files[0].name,
-        "file": {
-            filename: fileForm[0].files[0].name,
-            data: fileForm[0].files[0]
-        },
-        "channel": channel
+        file: Syncano.file(fileForm[0].files[0]),
+        "channel": channelName
     };
 
     // add data object to Syncano
-    instance.class(className).dataobject().add(object)
+    DataObject.please().create(object)
         .then(function(res){
 
         })
@@ -104,19 +122,30 @@ function addFileBlock(data) { // add file to UI code
     if($("#noFiles").length > 0) {
         $('#noFiles').remove();
     }
-    filesRow.append('<div id="' + data.id + '" class="small-6 medium-4 large-3 columns" style="display:none"><div class="file text-center">' +
-        '<h4>' + data.name + '</h4>' +
-        '<a href=' + data.file.value + ' target="_blank"><p>Download</p></a>' +
-        '<a class="removeText" onclick="removeFile(' + data.id + ')">Remove</a>' +
+    if(data.payload){
+        var newData = data.payload;
+    }
+    if(newData.name.length > 30){
+        newData.name = newData.name.substring(0,30) + "...";
+    }
+    filesRow.append('<div id="' + newData.id + '" class="small-6 medium-4 large-3 columns" style="display:none"><div class="file text-center">' +
+        '<h4>' + newData.name + '</h4>' +
+        '<a href=' + newData.file.value + ' target="_blank"><p>Download</p></a>' +
+        '<a class="removeText" onclick="removeFile(' + newData.id + ')">Remove</a>' +
         '</div></div>');
 
-    $('#' + JSON.stringify(data.id)).fadeIn();
+    $('#' + JSON.stringify(newData.id)).fadeIn();
 }
 
 function removeFile(id) { // remove file from UI code
-    instance.class(className).dataobject(id).delete()
+    var deleteQuery = {
+        instanceName: instanceName,
+        className: className,
+        id: id
+    };
+    DataObject.please().delete(deleteQuery)
         .then(function(res){
-            //console.log(res);
+
         })
         .catch(function(err){
             console.log(err);
